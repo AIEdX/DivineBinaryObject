@@ -1,6 +1,5 @@
 export const DBO = {
     schemas: {},
-    createSchemas: {},
     elementGetFunctions: {
         "8-bit-int": (dv, index) => {
             return dv.getInt8(index);
@@ -88,7 +87,11 @@ export const DBO = {
         return temp2.buffer;
     },
     registerSchema(id, schema) {
-        this.schemas[id] = schema;
+        const legnth = this._calculateSchemaLength(schema);
+        this.schemas[id] = {
+            length: legnth,
+            schema: schema,
+        };
     },
     _calculateSchemaLength(schema) {
         let length = 0;
@@ -111,39 +114,37 @@ export const DBO = {
         }
         return length;
     },
-    registerCreateSchema(id, schema) {
-        const legnth = this._calculateSchemaLength(schema);
-        this.createSchemas[id] = {
-            length: legnth,
-            schema: schema,
-        };
-    },
     getSchema(id) {
         return this.schemas[id];
     },
-    getCreateSchema(id) {
-        return this.createSchemas[id];
-    },
     createObject(schemaId, buffer) {
         let dv;
-        if (buffer instanceof DataView) {
-            dv = buffer;
+        //@ts-ignore
+        if (Buffer && !(buffer instanceof DataView)) {
+            //@ts-ignore
+            dv = new DataView(new Uint8Array(buffer).buffer);
         }
         else {
-            dv = new DataView(buffer);
+            if (buffer instanceof DataView) {
+                dv = buffer;
+            }
+            else {
+                dv = new DataView(buffer);
+            }
         }
-        const schema = this.getSchema(schemaId);
+        const schemaData = this.getSchema(schemaId);
         const object = new Object();
+        const schema = schemaData.schema;
         let byteCount = 0;
-        for (let i = 0; i < schema.length; i++) {
-            const element = schema[i];
+        for (const name of Object.keys(schema)) {
+            const element = schema[name];
             if (element.type == "string") {
                 continue;
             }
             if (element.type == "list") {
                 continue;
             }
-            object[element.name] = this.elementGetFunctions[element.type](dv, byteCount);
+            object[name] = this.elementGetFunctions[element.type](dv, byteCount);
             byteCount += this.elementByteCounts[element.type];
         }
         return object;
@@ -152,7 +153,7 @@ export const DBO = {
         return 1;
     },
     createBuffer(schemaId, updatedValues = {}) {
-        const schemaData = this.getCreateSchema(schemaId);
+        const schemaData = this.getSchema(schemaId);
         const schema = schemaData.schema;
         for (const key of Object.keys(updatedValues)) {
             const val = updatedValues[key];

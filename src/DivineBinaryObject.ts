@@ -1,20 +1,16 @@
-import {
-  DBOScehema,
-  DBOScehemaElementTypes,
-  DBOCreateBufferData as DBOCreateBufferSchema,
-} from "Meta/Schema.types";
+import { DBOScehema, DBOScehemaElementTypes } from "Meta/Schema.types";
 
 export const DBO = {
-  schemas: <Record<string, DBOScehema>>{},
-  createSchemas: <
+  schemas: <
     Record<
       string,
       {
         length: number;
-        schema: DBOCreateBufferSchema;
+        schema: DBOScehema;
       }
     >
   >{},
+
   elementGetFunctions: <
     Record<
       Exclude<DBOScehemaElementTypes, "list" | "string">,
@@ -120,10 +116,14 @@ export const DBO = {
   },
 
   registerSchema(id: string, schema: DBOScehema) {
-    this.schemas[id] = schema;
+    const legnth = this._calculateSchemaLength(schema);
+    this.schemas[id] = {
+      length: legnth,
+      schema: schema,
+    };
   },
 
-  _calculateSchemaLength(schema: DBOCreateBufferSchema) {
+  _calculateSchemaLength(schema: DBOScehema) {
     let length = 0;
     for (const key of Object.keys(schema)) {
       const element = schema[key];
@@ -144,20 +144,9 @@ export const DBO = {
     }
     return length;
   },
-  registerCreateSchema(id: string, schema: DBOCreateBufferSchema) {
-    const legnth = this._calculateSchemaLength(schema);
-    this.createSchemas[id] = {
-      length: legnth,
-      schema: schema,
-    };
-  },
 
   getSchema(id: string) {
     return this.schemas[id];
-  },
-
-  getCreateSchema(id: string) {
-    return this.createSchemas[id];
   },
 
   createObject<T>(
@@ -165,38 +154,44 @@ export const DBO = {
     buffer: ArrayBuffer | SharedArrayBuffer | DataView
   ): T {
     let dv;
-    if (buffer instanceof DataView) {
-      dv = buffer;
+
+    //@ts-ignore
+    if (Buffer && !(buffer instanceof DataView)) {
+      //@ts-ignore
+      dv = new DataView(new Uint8Array(buffer).buffer);
     } else {
-      dv = new DataView(buffer);
+      if (buffer instanceof DataView) {
+        dv = buffer;
+      } else {
+        dv = new DataView(buffer);
+      }
     }
-    const schema = this.getSchema(schemaId);
+
+    const schemaData = this.getSchema(schemaId);
     const object: any = new Object();
+    const schema = schemaData.schema;
 
     let byteCount = 0;
-    for (let i = 0; i < schema.length; i++) {
-      const element = schema[i];
+    for (const name of Object.keys(schema)) {
+      const element = schema[name];
       if (element.type == "string") {
         continue;
       }
       if (element.type == "list") {
         continue;
       }
-      object[element.name] = this.elementGetFunctions[element.type](
-        dv,
-        byteCount
-      );
+      object[name] = this.elementGetFunctions[element.type](dv, byteCount);
       byteCount += this.elementByteCounts[element.type];
     }
     return object;
   },
 
-  _calculateVariableSizeBuffer(scehma: DBOCreateBufferSchema) {
+  _calculateVariableSizeBuffer(scehma: DBOScehema) {
     return 1;
   },
 
   createBuffer(schemaId: string, updatedValues: any = {}) {
-    const schemaData = this.getCreateSchema(schemaId);
+    const schemaData = this.getSchema(schemaId);
     const schema = schemaData.schema;
     for (const key of Object.keys(updatedValues)) {
       const val = updatedValues[key];

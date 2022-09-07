@@ -1,5 +1,4 @@
-export type DBOScehema = DBOScehemaElement[];
-export type DBOCreateBufferData = Record<string,DBOCreateElement>;
+export type DBOScehema = Record<string,DBOScehemaElement>;
 export type DBOScehemaElementTypes =
   | "8-bit-int"
   | "8-bit-uint"
@@ -14,15 +13,9 @@ export type DBOScehemaElementTypes =
   | "string";
 
 export type DBOScehemaElement = {
-  name: string;
   type: DBOScehemaElementTypes;
   listType?: Exclude<DBOScehemaElementTypes, "list" | "string">;
   length?: number | "variable";
+  value : string | number
 };
 
-export type DBOCreateElement = {
-  type: DBOScehemaElementTypes;
-  listType?: Exclude<DBOScehemaElementTypes, "list" | "string">;
-  value: number | string | number[];
-  length?: number | "variable";
-};
