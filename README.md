@@ -60,6 +60,16 @@ console.log(result);
 
 ```
 
+The result is:
+```console
+{
+  header: 10,
+  positionX: 45.20000076293945,
+  positionY: 45.29999923706055,
+  positionZ: 45.400001525878906
+}
+```
+
 
 
 
