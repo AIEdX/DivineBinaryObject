@@ -13,14 +13,13 @@ export type DBOScehemaPrimitiveElementTypes =
 export type DBOScehemaAdvancedElementTypes =
   | "fixed-length-typed-list"
   | "fixed-length-string"
+  | "variable-length-string"
+  | "variable-length-typed-list"
   | "meta-marked-data";
 
 export type DBOScehemaElement = {
   type: DBOScehemaPrimitiveElementTypes | DBOScehemaAdvancedElementTypes;
-  listType?: Exclude<
-    DBOScehemaPrimitiveElementTypes,
-    "fixed-length-typed-list" | "fixed-length-string"
-  >;
+  listType?: DBOScehemaPrimitiveElementTypes;
   length?: number;
   value: string | number | number[];
 };

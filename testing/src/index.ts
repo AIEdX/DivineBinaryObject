@@ -33,16 +33,45 @@ const basicArray: DBOScehema = {
   },
 };
 
+const getRandomLengthString = () => {
+  let count = (100 * Math.random()) >> 0;
+  let string = "";
+  while (count--) {
+    string += "a";
+  }
+  return string;
+};
+
+const getRandomArray = () => {
+  let count = (100 * Math.random()) >> 0;
+  const array = [];
+  while (count--) {
+    array.push(12);
+  }
+  return array;
+};
+
+const randomString = getRandomLengthString();
+const randomArray = getRandomArray();
 const uuid = crypto.randomUUID();
 const basicUUID: DBOScehema = {
   header: {
     type: "8-bit-uint",
     value: 10,
   },
-  position: {
+  uuid: {
     type: "fixed-length-string",
     length: uuid.length,
     value: uuid,
+  },
+  message: {
+    type: "variable-length-string",
+    value: randomString,
+  },
+  data: {
+    type: "variable-length-typed-list",
+    listType: "8-bit-uint",
+    value: randomArray,
   },
 };
 

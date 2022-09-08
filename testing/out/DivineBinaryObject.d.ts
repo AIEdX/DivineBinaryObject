@@ -14,11 +14,11 @@ export declare const DBO: {
     sharedBufferToBuffer(sab: SharedArrayBuffer): ArrayBufferLike;
     registerSchema(id: string, schema: DBOScehema): void;
     _calculateSchemaLength(schema: DBOScehema): number;
+    _calculateVariableSizeBuffer(schema: DBOScehema): number;
     getSchema(id: string): {
         length: number;
         schema: DBOScehema;
     };
     createObject<T>(schemaId: string, buffer: ArrayBuffer | SharedArrayBuffer | DataView): T;
-    _calculateVariableSizeBuffer(scehma: DBOScehema): number;
     createBuffer(schemaId: string, updatedValues?: any): ArrayBuffer;
 };
