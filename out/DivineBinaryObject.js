@@ -1,5 +1,16 @@
 export const DBO = {
     schemas: {},
+    elementByteCounts: {
+        "8-bit-int": 1,
+        "8-bit-uint": 1,
+        "16-bit-int": 2,
+        "16-bit-uint": 2,
+        "32-bit-int": 4,
+        "32-bit-uint": 4,
+        "32-bit-float": 4,
+        "big-int": 8,
+        "big-uint": 8,
+    },
     elementGetFunctions: {
         "8-bit-int": (dv, index) => {
             return dv.getInt8(index);
@@ -58,16 +69,76 @@ export const DBO = {
             return dv.setBigUint64(index, BigInt(value));
         },
     },
-    elementByteCounts: {
-        "8-bit-int": 1,
-        "8-bit-uint": 1,
-        "16-bit-int": 2,
-        "16-bit-uint": 2,
-        "32-bit-int": 4,
-        "32-bit-uint": 4,
-        "32-bit-float": 4,
-        "big-int": 8,
-        "big-uint": 8,
+    advancedElementSetFunctions: {
+        "fixed-length-string": (dv, byteCount, element) => {
+            if (typeof element.value != "string") {
+                throw new Error("Value must a string for 'fixed-length-string'");
+            }
+            if (!element.length) {
+                throw new Error("Length must be set for 'fixed-length-string'");
+            }
+            const string = element.value;
+            for (let i = 0; i < element.length; i++) {
+                dv.setUint16(byteCount, string.charCodeAt(i));
+                byteCount += 2;
+            }
+            return byteCount;
+        },
+        "fixed-length-typed-list": (dv, byteCount, element) => {
+            if (!element.listType || !Array.isArray(element.value)) {
+                throw new Error("Fixed length type list must have list type set");
+            }
+            const arrayLength = element.value.length;
+            const arrayType = element.listType;
+            const byteLength = DBO.elementByteCounts[arrayType];
+            const func = DBO.elementSetFunctions[arrayType];
+            for (let i = 0; i < arrayLength; i++) {
+                func(dv, byteCount, element.value[i]);
+                byteCount += byteLength;
+            }
+            return byteCount;
+        },
+        "meta-marked-data": (dv, byteCount, element) => {
+            return byteCount;
+        },
+    },
+    advancedElementGetFunctions: {
+        "fixed-length-string": (dv, byteCount, element, targetObject, name) => {
+            if (typeof element.value != "string") {
+                throw new Error("Value must a string for 'fixed-length-string'");
+            }
+            if (!element.length) {
+                throw new Error("Length must be set for 'fixed-length-string'");
+            }
+            let string = "";
+            for (let i = 0; i < element.length; i++) {
+                string += String.fromCharCode(dv.getUint16(byteCount));
+                byteCount += 2;
+            }
+            targetObject[name] = string;
+            return byteCount;
+        },
+        "fixed-length-typed-list": (dv, byteCount, element, targetObject, name) => {
+            if (!element.listType ||
+                !Array.isArray(element.value) ||
+                !element.length) {
+                throw new Error("Fixed length type list must have list type set");
+            }
+            const payloadArray = [];
+            const arrayLength = element.length;
+            const arrayType = element.listType;
+            const byteLength = DBO.elementByteCounts[arrayType];
+            const func = DBO.elementGetFunctions[arrayType];
+            for (let i = 0; i < arrayLength; i++) {
+                payloadArray[i] = func(dv, byteCount);
+                byteCount += byteLength;
+            }
+            targetObject[name] = payloadArray;
+            return byteCount;
+        },
+        "meta-marked-data": (dv, byteCount, element, targetObject, name) => {
+            return byteCount;
+        },
     },
     getBuffer(length, SAB) {
         if (SAB) {
@@ -97,15 +168,17 @@ export const DBO = {
         let length = 0;
         for (const key of Object.keys(schema)) {
             const element = schema[key];
-            if (element.length == "variable") {
-                length = -1;
-                break;
-            }
-            if (element.type == "string" && element.length) {
+            /*     if (element.length == "variable") {
+              length = -1;
+              break;
+            } */
+            if (element.type == "fixed-length-string" && element.length) {
                 length += element.length * 4;
                 continue;
             }
-            if (element.type == "list" && element.length && element.listType) {
+            if (element.type == "fixed-length-typed-list" &&
+                element.length &&
+                element.listType) {
                 length += element.length * this.elementByteCounts[element.listType];
                 continue;
             }
@@ -138,14 +211,15 @@ export const DBO = {
         let byteCount = 0;
         for (const name of Object.keys(schema)) {
             const element = schema[name];
-            if (element.type == "string") {
+            if (this.advancedElementGetFunctions[element.type]) {
+                byteCount += this.advancedElementGetFunctions[element.type](dv, byteCount, element, object, name);
                 continue;
             }
-            if (element.type == "list") {
-                continue;
+            if (this.elementSetFunctions[element.type]) {
+                object[name] = this.elementGetFunctions[element.type](dv, byteCount);
+                byteCount +=
+                    this.elementByteCounts[element.type];
             }
-            object[name] = this.elementGetFunctions[element.type](dv, byteCount);
-            byteCount += this.elementByteCounts[element.type];
         }
         return object;
     },
@@ -170,14 +244,15 @@ export const DBO = {
         let byteCount = 0;
         for (const key of Object.keys(schema)) {
             const element = schema[key];
-            if (element.type == "string") {
+            if (this.advancedElementSetFunctions[element.type]) {
+                byteCount += this.advancedElementSetFunctions[element.type](dv, byteCount, element);
                 continue;
             }
-            if (element.type == "list") {
-                continue;
+            if (this.elementSetFunctions[element.type]) {
+                this.elementSetFunctions[element.type](dv, byteCount, Number(element.value));
+                byteCount +=
+                    this.elementByteCounts[element.type];
             }
-            this.elementSetFunctions[element.type](dv, byteCount, Number(element.value));
-            byteCount += this.elementByteCounts[element.type];
         }
         return buffer;
     },

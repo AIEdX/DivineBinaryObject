@@ -1,8 +1,9 @@
 export declare type DBOScehema = Record<string, DBOScehemaElement>;
-export declare type DBOScehemaElementTypes = "8-bit-int" | "8-bit-uint" | "16-bit-int" | "16-bit-uint" | "32-bit-float" | "32-bit-int" | "32-bit-uint" | "big-int" | "big-uint" | "list" | "string";
+export declare type DBOScehemaPrimitiveElementTypes = "8-bit-int" | "8-bit-uint" | "16-bit-int" | "16-bit-uint" | "32-bit-float" | "32-bit-int" | "32-bit-uint" | "big-int" | "big-uint";
+export declare type DBOScehemaAdvancedElementTypes = "fixed-length-typed-list" | "fixed-length-string" | "meta-marked-data";
 export declare type DBOScehemaElement = {
-    type: DBOScehemaElementTypes;
-    listType?: Exclude<DBOScehemaElementTypes, "list" | "string">;
-    length?: number | "variable";
-    value: string | number;
+    type: DBOScehemaPrimitiveElementTypes | DBOScehemaAdvancedElementTypes;
+    listType?: Exclude<DBOScehemaPrimitiveElementTypes, "fixed-length-typed-list" | "fixed-length-string">;
+    length?: number;
+    value: string | number | number[];
 };

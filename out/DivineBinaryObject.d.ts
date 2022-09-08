@@ -1,12 +1,14 @@
-import { DBOScehema } from "Meta/Schema.types";
+import { DBOScehema, DBOScehemaPrimitiveElementTypes, DBOScehemaAdvancedElementTypes, DBOScehemaElement } from "Meta/Schema.types";
 export declare const DBO: {
     schemas: Record<string, {
         length: number;
         schema: DBOScehema;
     }>;
-    elementGetFunctions: Record<"8-bit-int" | "8-bit-uint" | "16-bit-int" | "16-bit-uint" | "32-bit-float" | "32-bit-int" | "32-bit-uint" | "big-int" | "big-uint", (dv: DataView, index: number) => any>;
-    elementSetFunctions: Record<"8-bit-int" | "8-bit-uint" | "16-bit-int" | "16-bit-uint" | "32-bit-float" | "32-bit-int" | "32-bit-uint" | "big-int" | "big-uint", (dv: DataView, index: number, value: number) => any>;
-    elementByteCounts: Record<"8-bit-int" | "8-bit-uint" | "16-bit-int" | "16-bit-uint" | "32-bit-float" | "32-bit-int" | "32-bit-uint" | "big-int" | "big-uint", number>;
+    elementByteCounts: Record<DBOScehemaPrimitiveElementTypes, number>;
+    elementGetFunctions: Record<DBOScehemaPrimitiveElementTypes, (dv: DataView, index: number) => any>;
+    elementSetFunctions: Record<DBOScehemaPrimitiveElementTypes, (dv: DataView, index: number, value: number) => any>;
+    advancedElementSetFunctions: Record<DBOScehemaAdvancedElementTypes, (dv: DataView, byteCount: number, element: DBOScehemaElement) => number>;
+    advancedElementGetFunctions: Record<DBOScehemaAdvancedElementTypes, (dv: DataView, byteCount: number, element: DBOScehemaElement, targetObject: any, name: string) => number>;
     getBuffer(length: number, SAB: boolean): ArrayBuffer;
     syncSABWtihBuffer(sab: SharedArrayBuffer, buffer: ArrayBuffer): void;
     sharedBufferToBuffer(sab: SharedArrayBuffer): ArrayBufferLike;
