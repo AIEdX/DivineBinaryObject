@@ -1,6 +1,6 @@
 {
   "name": "divine-binary-object",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A TypeScript library working with binary data.",
   "type": "module",
   "main": "out/index.js",

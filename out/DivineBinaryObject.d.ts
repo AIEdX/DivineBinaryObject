@@ -1,23 +1,24 @@
-import { DBOScehema, DBOScehemaPrimitiveElementTypes, DBOScehemaAdvancedElementTypes, DBOScehemaElement } from "Meta/Schema.types";
+import { DBObject, DBOAdvancedTypes, DBOElement } from "Meta/DBO.types";
 export declare const DBO: {
+    metaMarkedParser: {
+        toBuffer(data: import("./Classes/MMDNode.js").MMDNode<any>): ArrayBuffer;
+        toObject(buffer: ArrayBuffer): unknown;
+    };
     schemas: Record<string, {
         length: number;
-        schema: DBOScehema;
+        schema: DBObject;
     }>;
-    elementByteCounts: Record<DBOScehemaPrimitiveElementTypes, number>;
-    elementGetFunctions: Record<DBOScehemaPrimitiveElementTypes, (dv: DataView, index: number) => any>;
-    elementSetFunctions: Record<DBOScehemaPrimitiveElementTypes, (dv: DataView, index: number, value: number) => any>;
-    advancedElementSetFunctions: Record<DBOScehemaAdvancedElementTypes, (dv: DataView, byteCount: number, element: DBOScehemaElement) => number>;
-    advancedElementGetFunctions: Record<DBOScehemaAdvancedElementTypes, (dv: DataView, byteCount: number, element: DBOScehemaElement, targetObject: any, name: string) => number>;
+    advancedElementSetFunctions: Record<DBOAdvancedTypes, (dv: DataView, byteCount: number, element: DBOElement) => number>;
+    advancedElementGetFunctions: Record<DBOAdvancedTypes, (dv: DataView, byteCount: number, element: DBOElement, targetObject: any, name: string) => number>;
     getBuffer(length: number, SAB: boolean): ArrayBuffer;
     syncSABWtihBuffer(sab: SharedArrayBuffer, buffer: ArrayBuffer): void;
     sharedBufferToBuffer(sab: SharedArrayBuffer): ArrayBufferLike;
-    registerSchema(id: string, schema: DBOScehema): void;
-    _calculateSchemaLength(schema: DBOScehema): number;
-    _calculateVariableSizeBuffer(schema: DBOScehema): number;
+    registerSchema(id: string, schema: DBObject): void;
+    _calculateSchemaLength(schema: DBObject): number;
+    _calculateVariableSizeBuffer(schema: DBObject): number;
     getSchema(id: string): {
         length: number;
-        schema: DBOScehema;
+        schema: DBObject;
     };
     createObject<T>(schemaId: string, buffer: ArrayBuffer | SharedArrayBuffer | DataView): T;
     createBuffer(schemaId: string, updatedValues?: any): ArrayBuffer;

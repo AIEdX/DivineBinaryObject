@@ -1,1 +1,1 @@
-export * from "./Schema.types.js";
+export * from "./DBO.types.js";

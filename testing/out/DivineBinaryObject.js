@@ -1,76 +1,11 @@
+import { ByteCounts, ByteDataGet, ByteDataSet } from "./Constants/ByteData.js";
+import { MMDP } from "./MMD/MetaMarkedParser.js";
+ByteCounts;
 export const DBO = {
+    metaMarkedParser: MMDP,
     schemas: {},
-    elementByteCounts: {
-        "8-bit-int": 1,
-        "8-bit-uint": 1,
-        "16-bit-int": 2,
-        "16-bit-uint": 2,
-        "32-bit-int": 4,
-        "32-bit-uint": 4,
-        "32-bit-float": 4,
-        "big-int": 8,
-        "big-uint": 8,
-    },
-    elementGetFunctions: {
-        "8-bit-int": (dv, index) => {
-            return dv.getInt8(index);
-        },
-        "8-bit-uint": (dv, index) => {
-            return dv.getUint8(index);
-        },
-        "16-bit-int": (dv, index) => {
-            return dv.getInt16(index);
-        },
-        "16-bit-uint": (dv, index) => {
-            return dv.getUint16(index);
-        },
-        "32-bit-int": (dv, index) => {
-            return dv.getInt32(index);
-        },
-        "32-bit-uint": (dv, index) => {
-            return dv.getUint32(index);
-        },
-        "32-bit-float": (dv, index) => {
-            return dv.getFloat32(index);
-        },
-        "big-int": (dv, index) => {
-            return dv.getBigInt64(index);
-        },
-        "big-uint": (dv, index) => {
-            return dv.getBigUint64(index);
-        },
-    },
-    elementSetFunctions: {
-        "8-bit-int": (dv, index, value) => {
-            return dv.setInt8(index, value);
-        },
-        "8-bit-uint": (dv, index, value) => {
-            return dv.setUint8(index, value);
-        },
-        "16-bit-int": (dv, index, value) => {
-            return dv.setInt16(index, value);
-        },
-        "16-bit-uint": (dv, index, value) => {
-            return dv.setUint16(index, value);
-        },
-        "32-bit-int": (dv, index, value) => {
-            return dv.setInt32(index, value);
-        },
-        "32-bit-uint": (dv, index, value) => {
-            return dv.setUint32(index, value);
-        },
-        "32-bit-float": (dv, index, value) => {
-            return dv.setFloat32(index, value);
-        },
-        "big-int": (dv, index, value) => {
-            return dv.setBigInt64(index, BigInt(value));
-        },
-        "big-uint": (dv, index, value) => {
-            return dv.setBigUint64(index, BigInt(value));
-        },
-    },
     advancedElementSetFunctions: {
-        "variable-length-string": (dv, byteCount, element) => {
+        string: (dv, byteCount, element) => {
             if (typeof element.value != "string") {
                 throw new Error("Value must a string for 'fixed-length-string'");
             }
@@ -84,7 +19,7 @@ export const DBO = {
             }
             return byteCount;
         },
-        "fixed-length-string": (dv, byteCount, element) => {
+        "fixed-string": (dv, byteCount, element) => {
             if (typeof element.value != "string") {
                 throw new Error("Value must a string for 'fixed-length-string'");
             }
@@ -98,14 +33,14 @@ export const DBO = {
             }
             return byteCount;
         },
-        "variable-length-typed-list": (dv, byteCount, element) => {
+        "typed-array": (dv, byteCount, element) => {
             if (!element.listType || !Array.isArray(element.value)) {
                 throw new Error("Fixed length type list must have list type set");
             }
             const arrayLength = element.value.length;
             const arrayType = element.listType;
-            const byteLength = DBO.elementByteCounts[arrayType];
-            const func = DBO.elementSetFunctions[arrayType];
+            const byteLength = ByteCounts[arrayType];
+            const func = ByteDataSet[arrayType];
             dv.setUint32(byteCount, arrayLength);
             byteCount += 4;
             for (let i = 0; i < arrayLength; i++) {
@@ -114,7 +49,7 @@ export const DBO = {
             }
             return byteCount;
         },
-        "fixed-length-typed-list": (dv, byteCount, element) => {
+        "fixed-typed-array": (dv, byteCount, element) => {
             if (!element.listType ||
                 !Array.isArray(element.value) ||
                 !element.length) {
@@ -122,20 +57,20 @@ export const DBO = {
             }
             const arrayLength = element.length;
             const arrayType = element.listType;
-            const byteLength = DBO.elementByteCounts[arrayType];
-            const func = DBO.elementSetFunctions[arrayType];
+            const byteLength = ByteCounts[arrayType];
+            const func = ByteDataSet[arrayType];
             for (let i = 0; i < arrayLength; i++) {
                 func(dv, byteCount, element.value[i]);
                 byteCount += byteLength;
             }
             return byteCount;
         },
-        "meta-marked-data": (dv, byteCount, element) => {
+        mmd: (dv, byteCount, element) => {
             return byteCount;
         },
     },
     advancedElementGetFunctions: {
-        "variable-length-string": (dv, byteCount, element, targetObject, name) => {
+        string: (dv, byteCount, element, targetObject, name) => {
             let string = "";
             const length = dv.getUint32(byteCount);
             byteCount += 4;
@@ -146,7 +81,7 @@ export const DBO = {
             targetObject[name] = string;
             return byteCount;
         },
-        "fixed-length-string": (dv, byteCount, element, targetObject, name) => {
+        "fixed-string": (dv, byteCount, element, targetObject, name) => {
             if (typeof element.value != "string") {
                 throw new Error("Value must a string for 'fixed-length-string'");
             }
@@ -161,14 +96,14 @@ export const DBO = {
             targetObject[name] = string;
             return byteCount;
         },
-        "variable-length-typed-list": (dv, byteCount, element, targetObject, name) => {
+        "typed-array": (dv, byteCount, element, targetObject, name) => {
             if (!element.listType || !Array.isArray(element.value)) {
                 throw new Error("Fixed length type list must have list type set");
             }
             const payloadArray = [];
             const arrayType = element.listType;
-            const byteLength = DBO.elementByteCounts[arrayType];
-            const func = DBO.elementGetFunctions[arrayType];
+            const byteLength = ByteCounts[arrayType];
+            const func = ByteDataGet[arrayType];
             const arrayLength = dv.getUint32(byteCount);
             byteCount += 4;
             for (let i = 0; i < arrayLength; i++) {
@@ -178,7 +113,7 @@ export const DBO = {
             targetObject[name] = payloadArray;
             return byteCount;
         },
-        "fixed-length-typed-list": (dv, byteCount, element, targetObject, name) => {
+        "fixed-typed-array": (dv, byteCount, element, targetObject, name) => {
             if (!element.listType ||
                 !Array.isArray(element.value) ||
                 !element.length) {
@@ -187,8 +122,8 @@ export const DBO = {
             const payloadArray = [];
             const arrayLength = element.length;
             const arrayType = element.listType;
-            const byteLength = DBO.elementByteCounts[arrayType];
-            const func = DBO.elementGetFunctions[arrayType];
+            const byteLength = ByteCounts[arrayType];
+            const func = ByteDataGet[arrayType];
             for (let i = 0; i < arrayLength; i++) {
                 payloadArray[i] = func(dv, byteCount);
                 byteCount += byteLength;
@@ -196,7 +131,7 @@ export const DBO = {
             targetObject[name] = payloadArray;
             return byteCount;
         },
-        "meta-marked-data": (dv, byteCount, element, targetObject, name) => {
+        mmd: (dv, byteCount, element, targetObject, name) => {
             return byteCount;
         },
     },
@@ -228,26 +163,25 @@ export const DBO = {
         let length = 0;
         for (const key of Object.keys(schema)) {
             const element = schema[key];
-            if (element.type == "variable-length-typed-list") {
+            if (element.type == "typed-array") {
                 length = -1;
                 break;
             }
-            if (element.type == "variable-length-string") {
+            if (element.type == "string") {
                 length = -1;
                 break;
             }
-            if (element.type == "fixed-length-string" && element.length) {
+            if (element.type == "fixed-string" && element.length) {
                 length += element.length * 2;
                 continue;
             }
-            if (element.type == "fixed-length-typed-list" &&
+            if (element.type == "fixed-typed-array" &&
                 element.length &&
                 element.listType) {
-                length += element.length * this.elementByteCounts[element.listType];
+                length += element.length * ByteCounts[element.listType];
                 continue;
             }
-            length +=
-                this.elementByteCounts[element.type];
+            length += ByteCounts[element.type];
         }
         return length;
     },
@@ -255,30 +189,27 @@ export const DBO = {
         let length = 0;
         for (const key of Object.keys(schema)) {
             const element = schema[key];
-            if (element.type == "fixed-length-string" && element.length) {
+            if (element.type == "fixed-string" && element.length) {
                 length += element.length * 2;
                 continue;
             }
-            if (element.type == "variable-length-string" &&
-                typeof element.value == "string") {
+            if (element.type == "string" && typeof element.value == "string") {
                 length += element.value.length * 2 + 4;
                 continue;
             }
-            if (element.type == "fixed-length-typed-list" &&
+            if (element.type == "fixed-typed-array" &&
                 element.length &&
                 element.listType) {
-                length += element.length * this.elementByteCounts[element.listType];
+                length += element.length * ByteCounts[element.listType];
                 continue;
             }
-            if (element.type == "variable-length-typed-list" &&
+            if (element.type == "typed-array" &&
                 Array.isArray(element.value) &&
                 element.listType) {
-                length +=
-                    element.value.length * this.elementByteCounts[element.listType] + 4;
+                length += element.value.length * ByteCounts[element.listType] + 4;
                 continue;
             }
-            length +=
-                this.elementByteCounts[element.type];
+            length += ByteCounts[element.type];
         }
         return length;
     },
@@ -310,10 +241,9 @@ export const DBO = {
                 byteCount = this.advancedElementGetFunctions[element.type](dv, byteCount, element, object, name);
                 continue;
             }
-            if (this.elementSetFunctions[element.type]) {
-                object[name] = this.elementGetFunctions[element.type](dv, byteCount);
-                byteCount +=
-                    this.elementByteCounts[element.type];
+            if (ByteDataGet[element.type]) {
+                object[name] = ByteDataGet[element.type](dv, byteCount);
+                byteCount += ByteCounts[element.type];
             }
         }
         return object;
@@ -340,10 +270,9 @@ export const DBO = {
                 byteCount = this.advancedElementSetFunctions[element.type](dv, byteCount, element);
                 continue;
             }
-            if (this.elementSetFunctions[element.type]) {
-                this.elementSetFunctions[element.type](dv, byteCount, Number(element.value));
-                byteCount +=
-                    this.elementByteCounts[element.type];
+            if (ByteDataSet[element.type]) {
+                ByteDataSet[element.type](dv, byteCount, Number(element.value));
+                byteCount += ByteCounts[element.type];
             }
         }
         return buffer;
