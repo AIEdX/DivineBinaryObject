@@ -26,6 +26,7 @@ const markers: MMDMarks[] = [
   "fixed-string-array",
   "string-array",
   "typed-array",
+  "json",
   "mmd",
 ];
 

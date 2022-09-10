@@ -5,6 +5,7 @@ import { MetaMapValues, MetaValues } from "../Constants/MetaValues.js";
 import { MMD } from "../MetaMarkedData.js";
 export const DBOP = {
     mmdTokens: [],
+    jsonStrings: [],
     schemas: {},
     advancedElementSetFunctions: {
         string: (dv, byteCount, element) => {
@@ -13,11 +14,12 @@ export const DBOP = {
             }
             const length = element.value.length;
             const string = element.value;
-            dv.setUint32(byteCount, length);
+            const func = ByteDataSet["16ui"];
+            ByteDataSet["32ui"](dv, byteCount, length);
             byteCount += 4;
             for (let i = 0; i < length; i++) {
-                dv.setUint16(byteCount, string.charCodeAt(i));
-                byteCount += 2;
+                func(dv, byteCount, string.charCodeAt(i));
+                byteCount += ByteCounts["16ui"];
             }
             return byteCount;
         },
@@ -29,27 +31,28 @@ export const DBOP = {
                 throw new Error("Length must be set for 'fixed-length-string'");
             }
             const string = element.value;
+            const func = ByteDataSet["16ui"];
             for (let i = 0; i < element.length; i++) {
-                dv.setUint16(byteCount, string.charCodeAt(i));
-                byteCount += 2;
+                func(dv, byteCount, string.charCodeAt(i));
+                byteCount += ByteCounts["16ui"];
             }
             return byteCount;
         },
         "string-array": (dv, byteCount, element) => {
-            if (!element.listType || !Array.isArray(element.value)) {
-                throw new Error("Fixed length type list must have list type set");
+            if (!Array.isArray(element.value)) {
+                throw new Error("String array must be an array.");
             }
             let value = element.value;
             const arrayLength = element.value.length;
             const byteLength = ByteCounts["16ui"];
             const func = ByteDataSet["16ui"];
-            dv.setUint32(byteCount, arrayLength);
+            ByteDataSet["32ui"](dv, byteCount, arrayLength);
             byteCount += ByteCounts["32ui"];
             for (let i = 0; i < arrayLength; i++) {
                 let string = value[i];
-                dv.setUint32(byteCount, string.length);
+                ByteDataSet["32ui"](dv, byteCount, string.length);
                 byteCount += ByteCounts["32ui"];
-                for (let k = 0; k < string.length; i++) {
+                for (let k = 0; k < string.length; k++) {
                     func(dv, byteCount, string.charCodeAt(k));
                     byteCount += byteLength;
                 }
@@ -90,6 +93,19 @@ export const DBOP = {
             }
             return byteCount;
         },
+        json: (dv, byteCount, element) => {
+            const jsonString = DBOP.jsonStrings.shift();
+            if (!jsonString)
+                return;
+            const length = jsonString.length;
+            ByteDataSet["32ui"](dv, byteCount, length);
+            byteCount += ByteCounts["32ui"];
+            for (let i = 0; i < length; i++) {
+                ByteDataSet["16ui"](dv, byteCount, jsonString.charCodeAt(i));
+                byteCount += ByteCounts["16ui"];
+            }
+            return byteCount;
+        },
         mmd: (dv, byteCount, element) => {
             const mmdData = DBOP.mmdTokens.shift();
             if (!mmdData)
@@ -105,13 +121,25 @@ export const DBOP = {
     advancedElementGetFunctions: {
         string: (dv, byteCount, element, targetObject, name) => {
             let string = "";
-            const length = dv.getUint32(byteCount);
-            byteCount += 4;
+            const length = ByteDataGet["32ui"](dv, byteCount);
+            byteCount += ByteCounts["32ui"];
             for (let i = 0; i < length; i++) {
-                string += String.fromCharCode(dv.getUint16(byteCount));
-                byteCount += 2;
+                string += String.fromCharCode(ByteDataGet["16ui"](dv, byteCount));
+                byteCount += ByteCounts["16ui"];
             }
             targetObject[name] = string;
+            return byteCount;
+        },
+        json: (dv, byteCount, element, targetObject, name) => {
+            let string = "";
+            const length = ByteDataGet["32ui"](dv, byteCount);
+            byteCount += ByteCounts["32ui"];
+            for (let i = 0; i < length; i++) {
+                string += String.fromCharCode(ByteDataGet["16ui"](dv, byteCount));
+                byteCount += ByteCounts["16ui"];
+            }
+            const json = JSON.parse(string);
+            targetObject[name] = json;
             return byteCount;
         },
         "fixed-string": (dv, byteCount, element, targetObject, name) => {
@@ -123,8 +151,8 @@ export const DBOP = {
             }
             let string = "";
             for (let i = 0; i < element.length; i++) {
-                string += String.fromCharCode(dv.getUint16(byteCount));
-                byteCount += 2;
+                string += String.fromCharCode(ByteDataGet["16ui"](dv, byteCount));
+                byteCount += ByteCounts["16ui"];
             }
             targetObject[name] = string;
             return byteCount;
@@ -137,11 +165,33 @@ export const DBOP = {
             const arrayType = element.listTypeName;
             const byteLength = ByteCounts[arrayType];
             const func = ByteDataGet[arrayType];
-            const arrayLength = dv.getUint32(byteCount);
-            byteCount += 4;
+            const arrayLength = ByteDataGet["32ui"](dv, byteCount);
+            byteCount += ByteCounts["32ui"];
             for (let i = 0; i < arrayLength; i++) {
                 payloadArray[i] = func(dv, byteCount);
                 byteCount += byteLength;
+            }
+            targetObject[name] = payloadArray;
+            return byteCount;
+        },
+        "string-array": (dv, byteCount, element, targetObject, name) => {
+            if (!Array.isArray(element.value)) {
+                throw new Error("Fixed length type list must have list type set");
+            }
+            const payloadArray = [];
+            const byteLength = ByteCounts["16ui"];
+            const func = ByteDataGet["16ui"];
+            const arrayLength = ByteDataGet["32ui"](dv, byteCount);
+            byteCount += ByteCounts["32ui"];
+            for (let i = 0; i < arrayLength; i++) {
+                const stringLength = ByteDataGet["32ui"](dv, byteCount);
+                byteCount += ByteCounts["32ui"];
+                let string = "";
+                for (let k = 0; k < stringLength; k++) {
+                    string += String.fromCharCode(func(dv, byteCount));
+                    byteCount += byteLength;
+                }
+                payloadArray.push(string);
             }
             targetObject[name] = payloadArray;
             return byteCount;
@@ -168,7 +218,7 @@ export const DBOP = {
             const length = ByteDataGet["32ui"](dv, byteCount);
             byteCount += ByteCounts["32ui"];
             targetObject[name] = new TypedNode(MetaValues["mmd"], MMD.parser.toMMD(dv.buffer, byteCount, byteCount + length));
-            return byteCount;
+            return byteCount + length;
         },
     },
     getBuffer(length, SAB) {
@@ -211,8 +261,16 @@ export const DBOP = {
                 length = -1;
                 break;
             }
+            if (element.typeName == "string-array") {
+                length = -1;
+                break;
+            }
+            if (element.typeName == "json") {
+                length = -1;
+                break;
+            }
             if (element.typeName == "fixed-string" && element.length) {
-                length += element.length * 2;
+                length += element.length * ByteCounts["16ui"];
                 continue;
             }
             if (element.typeName == "fixed-typed-array" &&
@@ -236,12 +294,32 @@ export const DBOP = {
                 length += mmdData[1] + ByteCounts["32ui"];
                 continue;
             }
+            if (element.typeName == "json") {
+                let jsonString;
+                if (typeof element.value == "string") {
+                    jsonString = element.value;
+                }
+                else {
+                    jsonString = JSON.stringify(element.value);
+                }
+                this.jsonStrings.push(jsonString);
+                length += jsonString.length * ByteCounts["16ui"] + ByteCounts["32ui"];
+                continue;
+            }
             if (element.typeName == "fixed-string" && element.length) {
-                length += element.length * 2;
+                length += element.length * ByteCounts["16ui"];
                 continue;
             }
             if (element.typeName == "string" && typeof element.value == "string") {
-                length += element.value.length * 2 + 4;
+                length +=
+                    element.value.length * ByteCounts["16ui"] + ByteCounts["32ui"];
+                continue;
+            }
+            if (element.typeName == "string-array") {
+                length += ByteCounts["32ui"];
+                for (const string of element.v) {
+                    length += string.length * ByteCounts["16ui"] + ByteCounts["32ui"];
+                }
                 continue;
             }
             if (element.typeName == "fixed-typed-array" &&

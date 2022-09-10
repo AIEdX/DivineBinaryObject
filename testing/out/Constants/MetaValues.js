@@ -24,6 +24,7 @@ const markers = [
     "fixed-string-array",
     "string-array",
     "typed-array",
+    "json",
     "mmd",
 ];
 const metaValues = {};

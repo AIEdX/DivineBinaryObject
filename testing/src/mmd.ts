@@ -12,7 +12,11 @@ const mmdData = TNM.object({
   v3: TNM.string("value 3"),
   v4: TNM.typedArray("16ui", [1, 2, 3, 4, 5, 6, 7, 8]),
   v5: TNM.stringArray(["hello", "sup"]),
+  v6: TNM.json({
+    hello: "sup",
+  }),
 });
+
 const buffer = MMD.parser.toBuffer(mmdData);
 console.log(buffer);
 

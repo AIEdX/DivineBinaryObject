@@ -18,6 +18,7 @@ export type DBOARich =
   | "string-array"
   | "fixed-string-array"
   | "typed-array"
+  | "json"
   | "mmd";
 
 export type DBOElement = {

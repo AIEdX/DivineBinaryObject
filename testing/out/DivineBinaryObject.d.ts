@@ -9,6 +9,7 @@ export declare const DBO: {
     };
     parser: {
         mmdTokens: any[];
+        jsonStrings: string[];
         schemas: Record<string, {
             length: number;
             schema: {
@@ -35,7 +36,7 @@ export declare const DBO: {
                 [x: string]: import("./Classes/TypedNode.js").TypedNode<any>;
             };
         };
-        createObject<T_2>(schemaId: string, buffer: ArrayBuffer | DataView | SharedArrayBuffer): T_2;
+        createObject<T_2>(schemaId: string, buffer: DataView | ArrayBuffer | SharedArrayBuffer): T_2;
         createBuffer(schemaId: string, updatedValues?: any): ArrayBuffer;
     };
 };

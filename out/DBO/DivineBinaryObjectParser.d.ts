@@ -3,6 +3,7 @@ import { TypedNode } from "../Classes/TypedNode.js";
 declare type TypedNodeSchema = Record<string, TypedNode<any>>;
 export declare const DBOP: {
     mmdTokens: any[];
+    jsonStrings: string[];
     schemas: Record<string, {
         length: number;
         schema: TypedNodeSchema;

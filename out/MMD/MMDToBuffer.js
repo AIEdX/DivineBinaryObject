@@ -26,11 +26,11 @@ export const MMDToBuffer = {
             this._addToken(MetaValues["8ui"], key.length);
             this._tokenizeString(key);
             const node = data.value[key];
-            if (MetaMapValues[node.type] == "object") {
+            if (node.typeName == "object") {
                 size = this._traverseObj(node, size);
                 continue;
             }
-            if (MetaMapValues[node.type] == "array") {
+            if (node.typeName == "array") {
                 size = this._traverseArray(node, size);
                 continue;
             }
@@ -59,7 +59,7 @@ export const MMDToBuffer = {
         return size;
     },
     _tokenizePrimiives(node, size) {
-        if (typeof node.value == "string") {
+        if (node.typeName == "string") {
             //for size of the string
             size += node.value.length * 2;
             //for the length of the string
@@ -95,17 +95,34 @@ export const MMDToBuffer = {
             this._tokens.push([node.listType, -2, node.value]);
             return size;
         }
-        if (MetaMapValues[node.type] == "string-array") {
-            //for size of the type array
-            const count = ByteCounts["16ui"];
+        if (node.typeName == "string-array") {
             //for the marker
             size += ByteCounts["8ui"] + ByteCounts["32ui"];
             for (let i = 0; i < node.value.length; i++) {
-                size += node.value[i].length * count + ByteCounts["32ui"];
+                size += node.value[i].length * ByteCounts["16ui"] + ByteCounts["32ui"];
             }
             this._addMarker(MetaValues["string-array"]);
             this._addToken(MetaValues["32ui"], node.value.length);
             this._tokens.push([node.listType, -3, node.value]);
+            return size;
+        }
+        if (node.typeName == "json") {
+            let json = "";
+            if (typeof node.value == "object") {
+                json = JSON.stringify(node.value);
+            }
+            else {
+                json = node.value;
+            }
+            //for size of the string
+            size += json.length * ByteCounts["16ui"];
+            //for the length of the string
+            size += ByteCounts["32ui"];
+            //for the marker
+            size += ByteCounts["8ui"];
+            this._addMarker(MetaValues["json"]);
+            this._addToken(MetaValues["32ui"], json.length);
+            this._tokens.push([MetaValues["string"], -1, json]);
             return size;
         }
         return size;
@@ -180,7 +197,7 @@ export const MMDToBuffer = {
             index += ByteCounts[MetaMapValues[token[0]]];
         }
         tokens = [];
-        return pb;
+        return buffer;
     },
     toBuffer(data, byteOffSet = 0) {
         this._tokens = [];

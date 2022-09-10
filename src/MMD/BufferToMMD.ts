@@ -196,9 +196,7 @@ export const BToMMD = {
     "string-array": (dv, index) => {
       const size = ByteDataGet["32ui"](dv, index + 1);
       index += BC["32ui"] + BC["8ui"];
-
       const array: string[] = [];
-
       for (let i = 0; i < size; i++) {
         let string = "";
         const stringSize = ByteDataGet["32ui"](dv, index);
@@ -214,6 +212,7 @@ export const BToMMD = {
       } else {
         BToMMD._assign(BToMMD._newMMDNode("string-array", array));
       }
+      return index;
     },
     string: (dv, index) => {
       const length = ByteDataGet["32ui"](dv, index + 1);
@@ -246,11 +245,29 @@ export const BToMMD = {
       }
       return index;
     },
+    json: (dv, index) => {
+
+      const length = ByteDataGet["32ui"](dv, index + 1);
+      index += BC["32f"] + BC["8ui"];
+      let jsonString = "";
+      for (let i = index; i < index + length * BC["16ui"]; i += 2) {
+        jsonString += String.fromCharCode(ByteDataGet["16ui"](dv, i));
+      }
+
+      const result = JSON.parse(jsonString);
+      if (BToMMD._mode == "object") {
+        BToMMD._assign(result);
+      } else {
+        BToMMD._assign(BToMMD._newMMDNode("string", result));
+      }
+      return index + length * BC["16ui"];
+    },
     mmd: (dv, index) => {},
   },
 
   toObject<T>(buffer: ArrayBuffer, byteOffSet = 0): T {
     this._mode = "object";
+    console.log("hello");
     let legnth = buffer.byteLength;
     const dv = new DataView(buffer);
     this._objCount = 0;
@@ -266,9 +283,9 @@ export const BToMMD = {
   },
 
   toMMD<T>(buffer: ArrayBuffer, byteOffSet = 0, byteOffSetEnd = 0): T {
-  
     this._mode = "mmd";
     let legnth;
+
     if (byteOffSetEnd == 0) {
       legnth = buffer.byteLength;
     } else {

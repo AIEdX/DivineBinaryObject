@@ -4,6 +4,9 @@ import { TypedNode } from "./Classes/TypedNode.js";
 import { MetaValues } from "./Constants/MetaValues.js";
 
 export const TNM = {
+  json<T>(data: T) {
+    return new TypedNode<T>(MetaValues["json"], data);
+  },
   mmd<T>(data: TypedNode<T>) {
     return new TypedNode<TypedNode<T>>(MetaValues["mmd"], data);
   },

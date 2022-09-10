@@ -6,6 +6,7 @@ const basicSchema = {
   positionX: TNM._32f(45.2),
   positionY: TNM._32f(45.3),
   positionZ: TNM._32f(45.4),
+  t1: TNM.stringArray(["hello", "sup"]),
 };
 
 const basicArray = {
@@ -18,8 +19,15 @@ const withMMD = {
   mmd: TNM.mmd(
     TNM.object({
       v1: TNM._32f(12.1),
+      json: TNM.json({
+        hello: "sup",
+      }),
     })
   ),
+  json: TNM.json({
+    hello: "sup",
+  }),
+  string : TNM.fixedString("hello there",11)
 };
 
 DBO.parser.registerSchema("basic", basicSchema);

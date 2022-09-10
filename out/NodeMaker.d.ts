@@ -1,9 +1,10 @@
 import { DBOPrimitive } from "index.js";
 import { TypedNode } from "./Classes/TypedNode.js";
 export declare const TNM: {
-    mmd<T>(data: TypedNode<T>): TypedNode<TypedNode<T>>;
-    object<T_1>(data: T_1): TypedNode<T_1>;
-    array<T_2>(data: T_2): TypedNode<T_2>;
+    json<T>(data: T): TypedNode<T>;
+    mmd<T_1>(data: TypedNode<T_1>): TypedNode<TypedNode<T_1>>;
+    object<T_2>(data: T_2): TypedNode<T_2>;
+    array<T_3>(data: T_3): TypedNode<T_3>;
     _8i(value: number): TypedNode<number>;
     _8ui(value: number): TypedNode<number>;
     _16i(value: number): TypedNode<number>;
