@@ -1,11 +1,12 @@
 import { MetaValues, MetaMapValues } from "../Constants/MetaValues.js";
-import { MMDNode } from "../Classes/MMDNode.js";
+import { TypedNode } from "../Classes/TypedNode.js";
 import { ByteCounts, ByteDataSet } from "../Constants/ByteData.js";
-import { DBOPrimitiveTypes } from "index.js";
+import { DBOPrimitive } from "index.js";
 type MMDToken =
   | [number, number]
   | [number, -1, string]
-  | [number, -2, number[]];
+  | [number, -2, number[]]
+  | [number, -3, string[]];
 export const MMDToBuffer = {
   _tokens: <MMDToken[]>[],
 
@@ -18,7 +19,7 @@ export const MMDToBuffer = {
     }
   },
 
-  _traverseObj(data: MMDNode<any>, size: number) {
+  _traverseObj(data: TypedNode<any>, size: number) {
     this._addMarker(MetaValues["object-start"]);
     //for the object start and end marks
     size += 2;
@@ -54,7 +55,7 @@ export const MMDToBuffer = {
     return size;
   },
 
-  _traverseArray(data: MMDNode<any>, size: number) {
+  _traverseArray(data: TypedNode<any>, size: number) {
     this._addMarker(MetaValues["array-start"]);
     //for object array start and end marks
     size += 2;
@@ -75,7 +76,7 @@ export const MMDToBuffer = {
     return size;
   },
 
-  _tokenizePrimiives(node: MMDNode<any>, size: number) {
+  _tokenizePrimiives(node: TypedNode<any>, size: number) {
     if (typeof node.value == "string") {
       //for size of the string
       size += node.value.length * 2;
@@ -115,10 +116,23 @@ export const MMDToBuffer = {
       this._tokens.push([node.listType, -2, node.value]);
       return size;
     }
+    if (MetaMapValues[node.type] == "string-array") {
+      //for size of the type array
+      const count = ByteCounts["16ui"];
+      //for the marker
+      size += ByteCounts["8ui"] + ByteCounts["32ui"];
+      for (let i = 0; i < node.value.length; i++) {
+        size += node.value[i].length * count + ByteCounts["32ui"];
+      }
+      this._addMarker(MetaValues["string-array"]);
+      this._addToken(MetaValues["32ui"], node.value.length);
+      this._tokens.push([node.listType, -3, node.value]);
+      return size;
+    }
     return size;
   },
 
-  _tokenize(data: MMDNode<any>) {
+  _tokenize(data: TypedNode<any>) {
     //start as two bytes for the stand and end tags
     let size = 2;
     if (MetaMapValues[data.type] == "object" && !Array.isArray(data.value)) {
@@ -130,16 +144,34 @@ export const MMDToBuffer = {
     return size;
   },
 
-  toBuffer(data: MMDNode<any>): ArrayBuffer {
-    this._tokens = [];
+  toTokens(data: TypedNode<any>): [MMDToken[], number] {
     this._addMarker(MetaValues["start"]);
     const size = this._tokenize(data);
     this._addMarker(MetaValues["end"]);
-    const buffer = new ArrayBuffer(size);
-    const dv = new DataView(buffer);
-    let index = 0;
+    return [this._tokens, size];
+  },
 
-    for (const token of this._tokens) {
+  toeknsToBuffer(
+    tokens: MMDToken[],
+    size: number,
+    buffer: ArrayBuffer,
+    byteOffSet = 0
+  ) {
+    this._ToBuffer(tokens, size, byteOffSet, buffer);
+  },
+
+  _ToBuffer(tokens: MMDToken[], size: number, byteOffSet = 0, pb?: any) {
+    let buffer;
+    if (!pb) {
+      buffer = new ArrayBuffer(size);
+    } else {
+      buffer = pb;
+    }
+
+    const dv = new DataView(buffer);
+    let index = byteOffSet;
+
+    for (const token of tokens) {
       if (token[1] == -1 && typeof token[2] === "string") {
         let string = token[2];
         for (let i = 0; i < string.length; i++) {
@@ -151,12 +183,28 @@ export const MMDToBuffer = {
 
       if (token[1] == -2 && Array.isArray(token[2])) {
         let array = token[2];
-        let type = <DBOPrimitiveTypes>MetaMapValues[token[0]];
+        let type = <DBOPrimitive>MetaMapValues[token[0]];
         let count = ByteCounts[type];
 
         for (let i = 0; i < array.length; i++) {
           ByteDataSet[type](dv, index, array[i]);
           index += count;
+        }
+        continue;
+      }
+
+      if (token[1] == -3 && Array.isArray(token[2])) {
+        let array = <string[]>token[2];
+        let type = <DBOPrimitive>MetaMapValues[token[0]];
+        let count = ByteCounts[type];
+        for (let i = 0; i < array.length; i++) {
+          const value = array[i];
+          ByteDataSet["32ui"](dv, index, value.length);
+          index += ByteCounts["32ui"];
+          for (let k = 0; k < value.length; k++) {
+            ByteDataSet["16ui"](dv, index, value.charCodeAt(k));
+            index += ByteCounts["16ui"];
+          }
         }
         continue;
       }
@@ -167,7 +215,16 @@ export const MMDToBuffer = {
       index += ByteCounts[MetaMapValues[token[0]]];
     }
 
-    return buffer;
+    tokens = [];
+    return pb;
+  },
+
+  toBuffer(data: TypedNode<any>, byteOffSet = 0): ArrayBuffer {
+    this._tokens = [];
+    this._addMarker(MetaValues["start"]);
+    const size = this._tokenize(data);
+    this._addMarker(MetaValues["end"]);
+    return this._ToBuffer(this._tokens, size, byteOffSet);
   },
 
   _addMarker(value: number) {

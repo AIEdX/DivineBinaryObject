@@ -95,6 +95,19 @@ export const MMDToBuffer = {
             this._tokens.push([node.listType, -2, node.value]);
             return size;
         }
+        if (MetaMapValues[node.type] == "string-array") {
+            //for size of the type array
+            const count = ByteCounts["16ui"];
+            //for the marker
+            size += ByteCounts["8ui"] + ByteCounts["32ui"];
+            for (let i = 0; i < node.value.length; i++) {
+                size += node.value[i].length * count + ByteCounts["32ui"];
+            }
+            this._addMarker(MetaValues["string-array"]);
+            this._addToken(MetaValues["32ui"], node.value.length);
+            this._tokens.push([node.listType, -3, node.value]);
+            return size;
+        }
         return size;
     },
     _tokenize(data) {
@@ -108,15 +121,26 @@ export const MMDToBuffer = {
         }
         return size;
     },
-    toBuffer(data) {
-        this._tokens = [];
+    toTokens(data) {
         this._addMarker(MetaValues["start"]);
         const size = this._tokenize(data);
         this._addMarker(MetaValues["end"]);
-        const buffer = new ArrayBuffer(size);
+        return [this._tokens, size];
+    },
+    toeknsToBuffer(tokens, size, buffer, byteOffSet = 0) {
+        this._ToBuffer(tokens, size, byteOffSet, buffer);
+    },
+    _ToBuffer(tokens, size, byteOffSet = 0, pb) {
+        let buffer;
+        if (!pb) {
+            buffer = new ArrayBuffer(size);
+        }
+        else {
+            buffer = pb;
+        }
         const dv = new DataView(buffer);
-        let index = 0;
-        for (const token of this._tokens) {
+        let index = byteOffSet;
+        for (const token of tokens) {
             if (token[1] == -1 && typeof token[2] === "string") {
                 let string = token[2];
                 for (let i = 0; i < string.length; i++) {
@@ -135,12 +159,35 @@ export const MMDToBuffer = {
                 }
                 continue;
             }
+            if (token[1] == -3 && Array.isArray(token[2])) {
+                let array = token[2];
+                let type = MetaMapValues[token[0]];
+                let count = ByteCounts[type];
+                for (let i = 0; i < array.length; i++) {
+                    const value = array[i];
+                    ByteDataSet["32ui"](dv, index, value.length);
+                    index += ByteCounts["32ui"];
+                    for (let k = 0; k < value.length; k++) {
+                        ByteDataSet["16ui"](dv, index, value.charCodeAt(k));
+                        index += ByteCounts["16ui"];
+                    }
+                }
+                continue;
+            }
             //@ts-ignore
             ByteDataSet[MetaMapValues[token[0]]](dv, index, token[1]);
             //@ts-ignore
             index += ByteCounts[MetaMapValues[token[0]]];
         }
-        return buffer;
+        tokens = [];
+        return pb;
+    },
+    toBuffer(data, byteOffSet = 0) {
+        this._tokens = [];
+        this._addMarker(MetaValues["start"]);
+        const size = this._tokenize(data);
+        this._addMarker(MetaValues["end"]);
+        return this._ToBuffer(this._tokens, size, byteOffSet);
     },
     _addMarker(value) {
         this._tokens.push([MetaValues["8ui"], value]);

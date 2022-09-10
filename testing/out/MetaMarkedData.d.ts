@@ -1,22 +1,10 @@
-import { DBOPrimitiveTypes } from "index.js";
-import { MMDNode } from "./Classes/MMDNode.js";
+import { TypedNode } from "./Classes/TypedNode.js";
 export declare const MMD: {
     parser: {
-        toBuffer(data: MMDNode<any>): ArrayBuffer;
-        toObject(buffer: ArrayBuffer): unknown;
+        toBuffer(data: TypedNode<any>): ArrayBuffer;
+        toObject<T>(buffer: ArrayBuffer, byteOffSet?: number): T;
+        toMMD<T_1>(buffer: ArrayBuffer, byteOffSet?: number, byteOffSetEnd?: number): TypedNode<T_1>;
+        toToekns(data: TypedNode<any>): [([number, number] | [number, -1, string] | [number, -2, number[]] | [number, -3, string[]])[], number];
+        toeknsToBuffer(data: any, size: number, buffer: ArrayBuffer, byteOffSet?: number): void;
     };
-    object<T>(data: T): MMDNode<T>;
-    array<T_1>(data: T_1): MMDNode<T_1>;
-    _8i(value: number): MMDNode<number>;
-    _8ui(value: number): MMDNode<number>;
-    _16i(value: number): MMDNode<number>;
-    _16ui(value: number): MMDNode<number>;
-    _32ui(value: number): MMDNode<number>;
-    _32i(value: number): MMDNode<number>;
-    _32f(value: number): MMDNode<number>;
-    _64f(value: number): MMDNode<number>;
-    bigi(value: number): MMDNode<number>;
-    bigui(value: number): MMDNode<number>;
-    typedArray(type: DBOPrimitiveTypes, value: number[]): MMDNode<number[]>;
-    string(value: string): MMDNode<string>;
 };

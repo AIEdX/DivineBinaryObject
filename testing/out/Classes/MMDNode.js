@@ -1,29 +1,26 @@
+import { MetaMapValues } from "../Constants/MetaValues.js";
 export class MMDNode {
-    #t = 0;
-    #lt = 0;
-    #v;
+    t = 0;
+    lt = 0;
+    v;
     get type() {
-        return this.#t;
+        return this.t;
+    }
+    get typeName() {
+        return MetaMapValues[this.t];
     }
     get listType() {
-        return this.#lt;
+        return this.lt;
+    }
+    get listTypeName() {
+        return MetaMapValues[this.lt];
     }
     get value() {
-        return this.#v;
-    }
-    set value(value) {
-        this.#v = value;
+        return this.v;
     }
     constructor(type, value, listType = 0) {
-        this.#t = type;
-        this.#v = value;
-        this.#lt = listType;
-    }
-    toJSON() {
-        return {
-            value: this.#v,
-            type: this.#t,
-            listType: this.#lt,
-        };
+        this.t = type;
+        this.v = value;
+        this.lt = listType;
     }
 }

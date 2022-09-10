@@ -1,0 +1,23 @@
+import { DBOPrimitive } from "index.js";
+import { TypedNode } from "./Classes/TypedNode.js";
+export declare const TNM: {
+    mmd<T>(data: TypedNode<T>): TypedNode<TypedNode<T>>;
+    object<T_1>(data: T_1): TypedNode<T_1>;
+    array<T_2>(data: T_2): TypedNode<T_2>;
+    _8i(value: number): TypedNode<number>;
+    _8ui(value: number): TypedNode<number>;
+    _16i(value: number): TypedNode<number>;
+    _16ui(value: number): TypedNode<number>;
+    _32ui(value: number): TypedNode<number>;
+    _32i(value: number): TypedNode<number>;
+    _32f(value: number): TypedNode<number>;
+    _64f(value: number): TypedNode<number>;
+    bigi(value: number): TypedNode<number>;
+    bigui(value: number): TypedNode<number>;
+    typedArray(type: DBOPrimitive, value: number[]): TypedNode<number[]>;
+    stringArray(value: string[]): TypedNode<string[]>;
+    string(value: string): TypedNode<string>;
+    fixedString(value: string, length: number): TypedNode<string>;
+    fixedTypedArray(type: DBOPrimitive, value: number[], length: number): TypedNode<number[]>;
+    toJSONString(json: any): string;
+};

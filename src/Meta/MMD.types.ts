@@ -1,10 +1,10 @@
-import { DBOAdvancedTypes, DBOPrimitiveTypes } from "./DBO.types";
+import { DBOARich, DBOPrimitive } from "./DBO.types";
 
 export type MetaMarkedElementObject = Record<string, MetaMarkedElement>;
 export type MetaMarkedElementObjectList = Record<string, MetaMarkedElement>[];
 export type MetaMarkedElement = {
   type: number;
-  listType?: DBOPrimitiveTypes;
+  listType?: DBOPrimitive;
   value:
     | string
     | number
@@ -22,5 +22,5 @@ export type MMDMarks =
   | "array"
   | "array-start"
   | "array-end"
-  | DBOPrimitiveTypes
-  | DBOAdvancedTypes;
+  | DBOPrimitive
+  | DBOARich;

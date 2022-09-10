@@ -21,6 +21,8 @@ const markers = [
     "fixed-typed-array",
     "fixed-string",
     "string",
+    "fixed-string-array",
+    "string-array",
     "typed-array",
     "mmd",
 ];

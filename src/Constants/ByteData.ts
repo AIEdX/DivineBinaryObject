@@ -1,6 +1,6 @@
-import { DBOPrimitiveTypes } from "index";
+import { DBOPrimitive } from "index";
 
-export const ByteCounts: Record<DBOPrimitiveTypes, number> = {
+export const ByteCounts: Record<DBOPrimitive, number> = {
   "8i": 1,
   "8ui": 1,
   "16i": 2,
@@ -14,7 +14,7 @@ export const ByteCounts: Record<DBOPrimitiveTypes, number> = {
 };
 
 export const ByteDataGet: Record<
-  DBOPrimitiveTypes,
+  DBOPrimitive,
   (dv: DataView, index: number) => number
 > = {
   "8i": (dv, index) => {
@@ -52,7 +52,7 @@ export const ByteDataGet: Record<
 };
 
 export const ByteDataSet: Record<
-  DBOPrimitiveTypes,
+  DBOPrimitive,
   (dv: DataView, index: number, value: number) => void
 > = {
   "8i": (dv, index, value) => {

@@ -1,102 +1,42 @@
 import { DBO } from "../out/DivineBinaryObject.js";
-import type { DBObject } from "../out/Meta/DBO.types.js";
-import * as crypto from "crypto";
+import { TNM } from "../out/NodeMaker.js";
 
-const basicSchema: DBObject = {
-  header: {
-    type: "8ui",
-    value: 10,
-  },
-  positionX: {
-    type: "32f",
-    value: 45.2,
-  },
-  positionY: {
-    type: "32f",
-    value: 45.3,
-  },
-  positionZ: {
-    type: "32f",
-    value: 45.4,
-  },
-};
-const basicArray: DBObject = {
-  header: {
-    type: "8ui",
-    value: 10,
-  },
-  position: {
-    type: "fixed-typed-array",
-    listType: "32f",
-    length: 3,
-    value: [45.2, 45.3, 45.4],
-  },
+const basicSchema = {
+  header: TNM._8ui(10),
+  positionX: TNM._32f(45.2),
+  positionY: TNM._32f(45.3),
+  positionZ: TNM._32f(45.4),
 };
 
-const getRandomLengthString = () => {
-  let count = (100 * Math.random()) >> 0;
-  let string = "";
-  while (count--) {
-    string += "a";
-  }
-  return string;
+const basicArray = {
+  header: TNM._8ui(10),
+  position: TNM.fixedTypedArray("32f", [45.2, 45.3, 45.4], 3),
 };
 
-const getRandomArray = () => {
-  let count = (100 * Math.random()) >> 0;
-  const array = [];
-  while (count--) {
-    array.push(12);
-  }
-  return array;
+const withMMD = {
+  header: TNM._8ui(10),
+  mmd: TNM.mmd(
+    TNM.object({
+      v1: TNM._32f(12.1),
+    })
+  ),
 };
 
-const randomString = getRandomLengthString();
-const randomArray = getRandomArray();
-const uuid = crypto.randomUUID();
-const basicUUID: DBObject = {
-  header: {
-    type: "8ui",
-    value: 10,
-  },
-  uuid: {
-    type: "fixed-string",
-    length: uuid.length,
-    value: uuid,
-  },
-  message: {
-    type: "string",
-    value: randomString,
-  },
-  data: {
-    type: "typed-array",
-    listType: "8ui",
-    value: randomArray,
-  },
-};
+DBO.parser.registerSchema("basic", basicSchema);
+DBO.parser.registerSchema("basicArray", basicArray);
+DBO.parser.registerSchema("withMMD", withMMD);
 
-DBO.registerSchema("basic", basicSchema);
-DBO.registerSchema("basicArray", basicArray);
-DBO.registerSchema("basicUUID", basicUUID);
+const b1 = DBO.parser.createBuffer("basic");
+console.log(b1);
+const r1 = DBO.parser.createObject("basic", b1);
+console.log(TNM.toJSONString(r1));
 
-const t1 = () => {
-  const buffer = DBO.createBuffer("basic");
-  console.log(buffer);
-  const result = DBO.createObject("basic", buffer);
-  console.log(result);
-};
-const t2 = () => {
-  const buffer = DBO.createBuffer("basicArray");
-  console.log(buffer);
-  const result = DBO.createObject("basicArray", buffer);
-  console.log(result);
-};
-const t3 = () => {
-  const buffer = DBO.createBuffer("basicUUID");
-  console.log(buffer);
-  const result = DBO.createObject("basicUUID", buffer);
-  console.log(result);
-};
-t1();
-t2();
-t3();
+const b2 = DBO.parser.createBuffer("basicArray");
+console.log(b2);
+const r2 = DBO.parser.createObject("basicArray", b2);
+console.log(TNM.toJSONString(r2));
+
+const b3 = DBO.parser.createBuffer("withMMD");
+console.log(b3);
+const r3 = DBO.parser.createObject<typeof withMMD>("withMMD", b3);
+console.log(TNM.toJSONString(r3));

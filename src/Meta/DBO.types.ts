@@ -1,5 +1,5 @@
 export type DBObject = Record<string, DBOElement>;
-export type DBOPrimitiveTypes =
+export type DBOPrimitive =
   | "8i"
   | "8ui"
   | "16i"
@@ -11,16 +11,18 @@ export type DBOPrimitiveTypes =
   | "bigi"
   | "bigui";
 
-export type DBOAdvancedTypes =
+export type DBOARich =
   | "fixed-typed-array"
   | "fixed-string"
   | "string"
+  | "string-array"
+  | "fixed-string-array"
   | "typed-array"
   | "mmd";
 
 export type DBOElement = {
-  type: DBOPrimitiveTypes | DBOAdvancedTypes;
-  listType?: DBOPrimitiveTypes;
+  type: DBOPrimitive | DBOARich;
+  listType?: DBOPrimitive;
   length?: number;
-  value: string | number | number[];
+  value: string | number | number[] | string[]; 
 };
