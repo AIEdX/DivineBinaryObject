@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-<img src="https://divinestarapparel.com/wp-content/uploads/2021/02/logo-small.png"/>
+<img src="https://divine-star-software.github.io/DigitalAssets/images/logo-small.png">
 </p>
 
 ---
@@ -38,7 +38,7 @@ const withMMD = {
   json: TNM.json({
     hello: "sup",
   }),
-  string : TNM.fixedString("hello there",11)
+  string: TNM.fixedString("hello there", 11),
 };
 
 DBO.parser.registerSchema("basic", basicSchema);
@@ -59,7 +59,6 @@ const b3 = DBO.parser.createBuffer("withMMD");
 console.log(b3);
 const r3 = DBO.parser.createObject<typeof withMMD>("withMMD", b3);
 console.log(TNM.toJSONString(r3));
-
 ```
 
 The result is:
@@ -191,69 +190,58 @@ Another DBO Examples
 ```ts
 import { DBO } from "../out/DivineBinaryObject.js";
 import { TNM } from "../out/NodeMaker.js";
+import * as crypto from "crypto";
 
-const basicSchema = {
-  header: TNM._8ui(10),
-  positionX: TNM._32f(45.2),
-  positionY: TNM._32f(45.3),
-  positionZ: TNM._32f(45.4),
-  t1: TNM.stringArray(["hello", "sup"]),
+const getRandomLengthString = () => {
+  let count = (100 * Math.random()) >> 0;
+  let string = "";
+  while (count--) {
+    string += "a";
+  }
+  return string;
 };
 
-const basicArray = {
-  header: TNM._8ui(10),
-  position: TNM.fixedTypedArray("32f", [45.2, 45.3, 45.4], 3),
+const getRandomArray = () => {
+  let count = (100 * Math.random()) >> 0;
+  const array = [];
+  while (count--) {
+    array.push(12);
+  }
+  return array;
 };
 
-const withMMD = {
+const randomString = getRandomLengthString();
+const randomArray = getRandomArray();
+const uuid = crypto.randomUUID();
+
+const basicUUID = {
   header: TNM._8ui(10),
-  mmd: TNM.mmd(
-    TNM.object({
-      v1: TNM._32f(12.1),
-      json: TNM.json({
-        hello: "sup",
-      }),
-    })
-  ),
-  json: TNM.json({
-    hello: "sup",
-  }),
-  string : TNM.fixedString("hello there",11)
+  uuid: TNM.fixedString(uuid, uuid.length),
+  message: TNM.string(randomString),
+  data: TNM.typedArray("8ui", randomArray),
 };
-
-DBO.parser.registerSchema("basic", basicSchema);
-DBO.parser.registerSchema("basicArray", basicArray);
-DBO.parser.registerSchema("withMMD", withMMD);
-
-const b1 = DBO.parser.createBuffer("basic");
-console.log(b1);
-const r1 = DBO.parser.createObject("basic", b1);
-console.log(TNM.toJSONString(r1));
-
-const b2 = DBO.parser.createBuffer("basicArray");
-console.log(b2);
-const r2 = DBO.parser.createObject("basicArray", b2);
-console.log(TNM.toJSONString(r2));
-
-const b3 = DBO.parser.createBuffer("withMMD");
+DBO.parser.registerSchema("basicUUID", basicUUID);
+const b3 = DBO.parser.createBuffer("basicUUID");
 console.log(b3);
-const r3 = DBO.parser.createObject<typeof withMMD>("withMMD", b3);
-console.log(TNM.toJSONString(r3));
-
+const r3 = DBO.parser.createObject("basicUUID", b3);
+console.log(r3);
 ```
 
 ```console
 ArrayBuffer {
-  [Uint8Contents]: <0a 00 66 00 37 00 63 00 32 00 66 00 36 00 36 00 62 00 2d 00 64 00 65 00 39 00 36 00 2d 00 34 00 39 00 61 00 65 00 2d 00 61 00 37 00 65 00 37 00 2d 00 36 00 36 00 65 00 61 00 38 00 63 00 32 00 34 00 36 00 62 00 65 00 64 00 00 00 23 00 61 00 61 00 61 00 61 00 61 00 61 00 61 00 61 00 61 00 61 00 61 00 ... 62 more bytes>,
-  byteLength: 162
+  [Uint8Contents]: <0a 00 30 00 31 00 63 00 31 00 34 00 32 00 30 00 34 00 2d 00 36 00 36 00 32 00 38 00 2d 00 34 00 32 00 31 00 36 00 2d 00 61 00 65 00 37 00 33 00 2d 00 65 00 61 00 30 00 32 00 64 00 34 00 38 00 63 00 66 00 61 00 65 00 61 00 00 00 11 00 61 00 61 00 61 00 61 00 61 00 61 00 61 00 61 00 61 00 61 00 61 00 ... 44 more bytes>,
+  byteLength: 144
 }
 ```
 
 ```json
 {
   "header": 10,
-  "uuid": "f7c2f66b-de96-49ae-a7e7-66ea8c246bed",
-  "message": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-  "data": [12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12]
+  "uuid": "01c14204-6628-4216-ae73-ea02d48cfaea",
+  "message": "aaaaaaaaaaaaaaaaa",
+  "data": [
+    12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+    12, 12, 12, 12, 12, 12, 12, 12, 12, 12
+  ]
 }
 ```

@@ -20,3 +20,4 @@ const buffer = MMD.parser.toBuffer(mmdData);
 console.log(buffer);
 const object = MMD.parser.toObject(buffer);
 console.log(TNM.toJSONString(object));
+console.log(MMD.parser.toMMD(buffer));
